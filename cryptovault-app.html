@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoVault — Cofre Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020509;
+  --surface: #050c18;
+  --panel: #081020;
+  --card: #0a1428;
+  --border: #0e2040;
+  --border2: #1a3560;
+  --accent: #00d4ff;
+  --accent2: #00ff88;
+  --accent3: #ff3d71;
+  --accent4: #ffaa00;
+  --text: #c8e0f4;
+  --text-dim: #3a5a7a;
+  --text-mid: #6a8aa4;
+  --glow: 0 0 20px rgba(0,212,255,0.35);
+  --glow2: 0 0 20px rgba(0,255,136,0.35);
+  --glow3: 0 0 20px rgba(255,61,113,0.35);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* ─── LAYOUT ─── */
+.app { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: 260px; flex-shrink:0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: sticky; top:0; height:100vh;
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-mark {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem; font-weight: 900;
+  color: var(--accent); letter-spacing: 0.15em;
+  text-shadow: var(--glow);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.logo-icon {
+  width: 34px; height: 34px;
+  border: 1.5px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  animation: pulse-border 2.5s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%,100% { box-shadow: 0 0 8px rgba(0,212,255,0.2); }
+  50% { box-shadow: 0 0 20px rgba(0,212,255,0.6), inset 0 0 8px rgba(0,212,255,0.1); }
+}
+
+.logo-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem; color: var(--text-dim);
+  letter-spacing: 0.25em; margin-top: 4px;
+}
+
+.sidebar-status {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-dim);
+}
+.sidebar-status.unlocked { color: var(--accent2); }
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent3);
+  box-shadow: var(--glow3);
+}
+.sidebar-status.unlocked .status-dot {
+  background: var(--accent2); box-shadow: var(--glow2);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.nav-section {
+  padding: 16px 24px 8px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.3em; color: var(--text-dim); text-transform: uppercase;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 24px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+  letter-spacing: 0.08em; color: var(--text-mid);
+  cursor: pointer; transition: all 0.2s;
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+.nav-item:hover { color: var(--accent); background: rgba(0,212,255,0.04); }
+.nav-item.active {
+  color: var(--accent); background: rgba(0,212,255,0.07);
+  border-left-color: var(--accent);
+}
+.nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: rgba(0,212,255,0.15);
+  color: var(--accent); font-size: 0.6rem;
+  padding: 2px 7px; border: 1px solid rgba(0,212,255,0.3);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+  color: var(--text-dim); line-height: 1.8;
+}
+
+/* ─── MAIN ─── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface);
+}
+
+.page-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem; font-weight: 700; letter-spacing: 0.1em;
+  color: #fff;
+}
+
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+/* ─── BUTTONS ─── */
+.btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.12em;
+  padding: 9px 20px; border: none; cursor: pointer;
+  text-transform: uppercase; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary {
+  background: var(--accent); color: var(--bg);
+  clip-path: polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+}
+.btn-primary:hover { background: #fff; box-shadow: var(--glow); }
+.btn-ghost {
+  background: transparent; color: var(--text-mid);
+  border: 1px solid var(--border2);
+  clip-path: polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+}
+.btn-ghost:hover { color: var(--accent); border-color: var(--accent); }
+.btn-danger {
+  background: transparent; color: var(--accent3);
+  border: 1px solid rgba(255,61,113,0.3);
+  clip-path: polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+}
+.btn-danger:hover { background: rgba(255,61,113,0.1); border-color: var(--accent3); }
+.btn-success {
+  background: var(--accent2); color: var(--bg);
+  clip-path: polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+}
+.btn-success:hover { background: #fff; box-shadow: var(--glow2); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-sm { padding: 6px 14px; font-size: 0.65rem; }
+
+/* ─── CONTENT ─── */
+.content { flex:1; overflow-y: auto; padding: 32px; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-track { background: var(--surface); }
+.content::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* ─── VIEWS ─── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── LOCK SCREEN ─── */
+.lock-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 70vh; text-align: center;
+}
+
+.lock-icon {
+  font-size: 5rem; margin-bottom: 24px;
+  filter: drop-shadow(0 0 30px rgba(0,212,255,0.5));
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+.lock-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.8rem; font-weight: 900; color: #fff;
+  margin-bottom: 8px; letter-spacing: 0.05em;
+}
+
+.lock-sub {
+  font-size: 1rem; color: var(--text-dim); margin-bottom: 40px;
+  letter-spacing: 0.05em;
+}
+
+.lock-form {
+  width: 100%; max-width: 380px;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.2em; color: var(--text-dim);
+  text-transform: uppercase; margin-bottom: 8px; display: block;
+}
+
+.input-wrap {
+  display: flex;
+  border: 1px solid var(--border2);
+  background: var(--panel);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+.input-wrap:focus-within {
+  border-color: var(--accent); box-shadow: var(--glow);
+}
+
+.vault-input {
+  flex:1; background: transparent; border: none; outline: none;
+  padding: 13px 16px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;
+  color: #fff; letter-spacing: 0.08em;
+}
+.vault-input::placeholder { color: var(--text-dim); }
+
+.input-icon {
+  padding: 0 14px; display: flex; align-items: center;
+  color: var(--text-dim); font-size: 1rem;
+  background: transparent; border: none; cursor: pointer;
+  transition: color 0.2s;
+}
+.input-icon:hover { color: var(--accent); }
+
+.strength-mini {
+  display: flex; gap: 3px; margin-top: 6px;
+}
+.sm-seg {
+  flex:1; height: 2px; background: var(--border);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.lock-tabs {
+  display: flex; gap: 0; margin-bottom: 32px;
+  border: 1px solid var(--border2); overflow: hidden;
+}
+.lock-tab {
+  flex:1; padding: 10px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  background: transparent; color: var(--text-dim); border: none;
+  text-align: center;
+}
+.lock-tab.active { background: var(--accent); color: var(--bg); }
+.lock-tab:hover:not(.active) { color: var(--accent); background: rgba(0,212,255,0.05); }
+
+.info-box {
+  background: rgba(0,212,255,0.05);
+  border: 1px solid rgba(0,212,255,0.15);
+  padding: 12px 16px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+  color: var(--text-mid); line-height: 1.7; margin-bottom: 16px;
+  text-align: left;
+}
+
+/* ─── ENTRIES LIST ─── */
+.entries-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+}
+.entries-search {
+  flex:1;
+  display: flex; align-items: center;
+  border: 1px solid var(--border2);
+  background: var(--panel); overflow: hidden;
+  transition: border-color 0.2s;
+}
+.entries-search:focus-within { border-color: var(--accent); }
+.search-icon { padding: 0 14px; color: var(--text-dim); font-size: 0.9rem; }
+.search-input {
+  flex:1; background: transparent; border: none; outline: none;
+  padding: 11px 0;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+  color: var(--text);
+}
+.search-input::placeholder { color: var(--text-dim); }
+
+.filter-tabs {
+  display: flex; gap: 4px; margin-bottom: 20px;
+}
+.filter-tab {
+  font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.1em; padding: 6px 14px; cursor: pointer;
+  border: 1px solid var(--border); color: var(--text-dim);
+  background: transparent; transition: all 0.2s;
+  text-transform: uppercase;
+}
+.filter-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.07); }
+.filter-tab:hover:not(.active) { color: var(--text); border-color: var(--border2); }
+
+.entries-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.entry-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 20px;
+  cursor: pointer; transition: all 0.25s;
+  position: relative; overflow: hidden;
+}
+.entry-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+}
+.entry-card:hover { border-color: rgba(0,212,255,0.3); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.4), var(--glow); }
+.entry-card:hover::before { transform: scaleX(1); }
+
+.entry-type-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.15em; padding: 3px 10px;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.badge-msg { border: 1px solid rgba(0,212,255,0.3); color: var(--accent); background: rgba(0,212,255,0.07); }
+.badge-note { border: 1px solid rgba(255,170,0,0.3); color: var(--accent4); background: rgba(255,170,0,0.07); }
+.badge-pass { border: 1px solid rgba(0,255,136,0.3); color: var(--accent2); background: rgba(0,255,136,0.07); }
+.badge-file { border: 1px solid rgba(255,61,113,0.3); color: var(--accent3); background: rgba(255,61,113,0.07); }
+
+.entry-title {
+  font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 700;
+  color: #fff; margin-bottom: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.entry-preview {
+  font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+  color: var(--text-dim); line-height: 1.5;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.entry-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+  color: var(--text-dim);
+}
+.entry-algo { color: var(--accent4); }
+.entry-actions { display: flex; gap: 6px; }
+.entry-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 0.75rem; padding: 4px 8px;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'Share Tech Mono', monospace;
+}
+.entry-btn:hover { border-color: var(--accent); color: var(--accent); }
+.entry-btn.del:hover { border-color: var(--accent3); color: var(--accent3); }
+
+.empty-state {
+  text-align: center; padding: 80px 20px; color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+}
+.empty-state .empty-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+.empty-state p { font-size: 0.75rem; letter-spacing: 0.1em; }
+
+/* ─── ADD FORM ─── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { margin-bottom: 20px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label {
+  font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.form-label .required { color: var(--accent3); }
+
+.vault-textarea {
+  width:100%; background: var(--panel); border: 1px solid var(--border2);
+  outline: none; padding: 14px 16px; resize: vertical;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.8rem;
+  color: var(--text); line-height: 1.7; min-height: 140px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.vault-textarea:focus { border-color: var(--accent); box-shadow: var(--glow); }
+
+.type-selector {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+}
+.type-opt {
+  padding: 12px 8px; text-align: center; cursor: pointer;
+  border: 1px solid var(--border); transition: all 0.2s;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase;
+}
+.type-opt .t-emoji { font-size: 1.5rem; display: block; margin-bottom: 6px; }
+.type-opt:hover { border-color: var(--border2); color: var(--text); }
+.type-opt.selected { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.07); }
+
+.algo-selector {
+  display: flex; gap: 8px;
+}
+.algo-opt {
+  flex:1; padding: 10px; text-align: center; cursor: pointer;
+  border: 1px solid var(--border); transition: all 0.2s;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.algo-opt:hover { border-color: var(--border2); }
+.algo-opt.selected { border-color: var(--accent2); color: var(--accent2); background: rgba(0,255,136,0.07); }
+
+/* ─── MODAL / DETAIL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(2,5,9,0.85); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--panel); border: 1px solid var(--border2);
+  width: 100%; max-width: 600px; max-height: 85vh;
+  overflow-y: auto; position: relative;
+  transform: scale(0.95) translateY(10px); transition: transform 0.25s;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8), var(--glow);
+}
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+.modal-header {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title {
+  font-family: 'Orbitron', monospace; font-size: 0.9rem;
+  font-weight: 700; color: #fff; letter-spacing: 0.1em;
+}
+.modal-close {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 1rem; padding: 6px 10px;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'Share Tech Mono', monospace;
+}
+.modal-close:hover { border-color: var(--accent3); color: var(--accent3); }
+
+.modal-body { padding: 28px; }
+.modal-footer {
+  padding: 20px 28px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+
+.decrypted-box {
+  background: rgba(0,255,136,0.04);
+  border: 1px solid rgba(0,255,136,0.2);
+  padding: 20px; margin-bottom: 20px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.82rem;
+  color: var(--accent2); line-height: 1.8;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* ─── STATS ─── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 24px 20px;
+}
+.stat-val {
+  font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 900;
+  color: var(--accent); text-shadow: var(--glow); display: block;
+}
+.stat-lbl {
+  font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.15em; color: var(--text-dim); margin-top: 6px; display: block;
+  text-transform: uppercase;
+}
+
+/* ─── TOAST ─── */
+.toast-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 2000;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--panel); border: 1px solid var(--border2);
+  padding: 14px 20px; min-width: 280px;
+  font-family: 'Share Tech Mono', monospace; font-size: 0.72rem;
+  display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.toast.success { border-color: rgba(0,255,136,0.4); color: var(--accent2); }
+.toast.error { border-color: rgba(255,61,113,0.4); color: var(--accent3); }
+.toast.info { border-color: rgba(0,212,255,0.4); color: var(--accent); }
+@keyframes slideIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideOut { to{opacity:0;transform:translateX(20px)} }
+
+/* ─── ENCRYPT VISUAL ─── */
+.encrypt-animation {
+  font-family: 'Share Tech Mono', monospace; font-size: 0.72rem;
+  color: var(--accent); line-height: 1.8; padding: 16px;
+  background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+  margin-bottom: 16px; min-height: 60px;
+  word-break: break-all;
+}
+
+/* ─── EXPORT ─── */
+.export-section {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 28px; margin-bottom: 20px;
+}
+.export-title {
+  font-family: 'Orbitron', monospace; font-size: 0.9rem;
+  color: var(--accent); margin-bottom: 12px;
+}
+.export-desc { font-size: 0.9rem; color: var(--text-dim); margin-bottom: 20px; line-height: 1.6; }
+
+/* ─── HISTORY ─── */
+.history-item {
+  display: flex; align-items: center; gap: 16px; padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace; font-size: 0.72rem;
+}
+.history-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink:0;
+}
+.h-add { background: var(--accent2); box-shadow: var(--glow2); }
+.h-view { background: var(--accent); box-shadow: var(--glow); }
+.h-del { background: var(--accent3); box-shadow: var(--glow3); }
+.h-login { background: var(--accent4); }
+.history-msg { flex:1; color: var(--text-mid); }
+.history-time { color: var(--text-dim); flex-shrink:0; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .sidebar{ width:200px; }
+  .stats-grid{ grid-template-columns:1fr 1fr; }
+  .form-grid{ grid-template-columns:1fr; }
+  .type-selector{ grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:600px){
+  .app{ flex-direction:column; }
+  .sidebar{ width:100%; height:auto; flex-direction:row; overflow-x:auto; }
+  .content{ padding:20px; }
+}
+
+.divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 28px 0;
+}
+
+code {
+  font-family:'Share Tech Mono',monospace; font-size:0.8em;
+  color: var(--accent4); background: rgba(255,170,0,0.08);
+  padding: 2px 6px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">🔐</div>
+        CRYPTOVAULT
+      </div>
+      <div class="logo-sub">◈ COFRE DIGITAL v2.0 ◈</div>
+    </div>
+
+    <div class="sidebar-status" id="sidebarStatus">
+      <div class="status-dot"></div>
+      COFRE BLOQUEADO
+    </div>
+
+    <div class="nav-section">NAVEGAÇÃO</div>
+    <div class="nav-item active" data-view="vault" onclick="switchView('vault')">
+      <span class="nav-icon">🗄️</span> MEU COFRE
+      <span class="nav-badge" id="entryCount">0</span>
+    </div>
+    <div class="nav-item" data-view="add" onclick="switchView('add')">
+      <span class="nav-icon">✚</span> NOVO REGISTRO
+    </div>
+    <div class="nav-item" data-view="history" onclick="switchView('history')">
+      <span class="nav-icon">🕒</span> HISTÓRICO
+    </div>
+    <div class="nav-item" data-view="export" onclick="switchView('export')">
+      <span class="nav-icon">📁</span> EXPORTAR
+    </div>
+    <div class="nav-section" style="margin-top:8px">SISTEMA</div>
+    <div class="nav-item" data-view="about" onclick="switchView('about')">
+      <span class="nav-icon">◈</span> SOBRE
+    </div>
+    <div class="nav-item" onclick="lockVault()" id="lockBtn" style="color:var(--accent3)">
+      <span class="nav-icon">🔒</span> BLOQUEAR
+    </div>
+
+    <div class="sidebar-footer">
+      AES-256-GCM · WebCrypto API<br>
+      DADOS LOCAIS · SEM SERVIDOR
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">MEU COFRE</div>
+      <div class="topbar-actions" id="topbarActions">
+        <button class="btn btn-primary btn-sm" onclick="switchView('add')">✚ NOVO</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- ── LOCK SCREEN ── -->
+      <div class="view active" id="view-lock">
+        <div class="lock-screen">
+          <div class="lock-icon" id="lockIcon">🔒</div>
+          <div class="lock-title" id="lockTitle">ACESSO AO COFRE</div>
+          <div class="lock-sub" id="lockSub">Autentique-se para continuar</div>
+
+          <div class="lock-tabs">
+            <button class="lock-tab active" onclick="setLockMode('unlock')" id="tab-unlock">🔓 ENTRAR</button>
+            <button class="lock-tab" onclick="setLockMode('create')" id="tab-create">✚ CRIAR COFRE</button>
+          </div>
+
+          <div class="lock-form">
+            <div class="info-box" id="lockInfoBox">
+              ◈ Os dados são criptografados com AES-256-GCM diretamente no seu navegador.<br>
+              ◈ Nenhuma informação é enviada a servidores externos.<br>
+              ◈ A senha nunca é armazenada — apenas uma chave derivada via PBKDF2.
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">◈ SENHA MESTRA</label>
+              <div class="input-wrap">
+                <input class="vault-input" type="password" id="masterPwd" placeholder="Digite sua senha mestra..." autocomplete="current-password">
+                <button class="input-icon" onclick="togglePwd('masterPwd',this)">👁</button>
+              </div>
+              <div class="strength-mini" id="pwdStrengthBar">
+                <div class="sm-seg" id="ps1"></div><div class="sm-seg" id="ps2"></div>
+                <div class="sm-seg" id="ps3"></div><div class="sm-seg" id="ps4"></div>
+                <div class="sm-seg" id="ps5"></div>
+              </div>
+            </div>
+
+            <div class="input-group" id="confirmGroup" style="display:none">
+              <label class="input-label">◈ CONFIRMAR SENHA</label>
+              <div class="input-wrap">
+                <input class="vault-input" type="password" id="confirmPwd" placeholder="Repita a senha mestra...">
+                <button class="input-icon" onclick="togglePwd('confirmPwd',this)">👁</button>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="lockBtn2" onclick="handleLock()">
+              🔓 DESBLOQUEAR COFRE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VAULT VIEW ── -->
+      <div class="view" id="view-vault">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <span class="stat-val" id="stat-total">0</span>
+            <span class="stat-lbl">Total de Registros</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-val" id="stat-msg">0</span>
+            <span class="stat-lbl">Mensagens</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-val" id="stat-pass">0</span>
+            <span class="stat-lbl">Senhas</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-val" id="stat-note">0</span>
+            <span class="stat-lbl">Notas</span>
+          </div>
+        </div>
+
+        <div class="entries-header">
+          <div class="entries-search">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="searchInput" placeholder="Buscar registros..." oninput="renderEntries()">
+          </div>
+        </div>
+
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setFilter('all',this)">TODOS</button>
+          <button class="filter-tab" onclick="setFilter('message',this)">💬 MENSAGENS</button>
+          <button class="filter-tab" onclick="setFilter('password',this)">🔑 SENHAS</button>
+          <button class="filter-tab" onclick="setFilter('note',this)">📝 NOTAS</button>
+        </div>
+
+        <div class="entries-grid" id="entriesGrid"></div>
+      </div>
+
+      <!-- ── ADD VIEW ── -->
+      <div class="view" id="view-add">
+        <div style="max-width:700px">
+          <div class="form-group">
+            <label class="form-label">◈ TIPO DE REGISTRO <span class="required">*</span></label>
+            <div class="type-selector">
+              <div class="type-opt selected" data-type="message" onclick="selectType(this)">
+                <span class="t-emoji">💬</span>MENSAGEM
+              </div>
+              <div class="type-opt" data-type="password" onclick="selectType(this)">
+                <span class="t-emoji">🔑</span>SENHA
+              </div>
+              <div class="type-opt" data-type="note" onclick="selectType(this)">
+                <span class="t-emoji">📝</span>NOTA
+              </div>
+              <div class="type-opt" data-type="secret" onclick="selectType(this)">
+                <span class="t-emoji">🕵️</span>SEGREDO
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full">
+              <label class="form-label">◈ TÍTULO <span class="required">*</span></label>
+              <div class="input-wrap">
+                <input class="vault-input" type="text" id="entryTitle" placeholder="Nome do registro...">
+              </div>
+            </div>
+
+            <div class="form-group full">
+              <label class="form-label">◈ CONTEÚDO SECRETO <span class="required">*</span></label>
+              <textarea class="vault-textarea" id="entryContent" placeholder="Digite o conteúdo a ser criptografado..."></textarea>
+            </div>
+
+            <div class="form-group full">
+              <label class="form-label">◈ ALGORITMO DE CRIPTOGRAFIA</label>
+              <div class="algo-selector">
+                <div class="algo-opt selected" data-algo="AES-256-GCM" onclick="selectAlgo(this)">AES-256-GCM</div>
+                <div class="algo-opt" data-algo="AES-128-GCM" onclick="selectAlgo(this)">AES-128-GCM</div>
+                <div class="algo-opt" data-algo="AES-256-CBC" onclick="selectAlgo(this)">AES-256-CBC</div>
+              </div>
+            </div>
+
+            <div class="form-group full">
+              <label class="form-label">◈ TAGS (separadas por vírgula)</label>
+              <div class="input-wrap">
+                <input class="vault-input" type="text" id="entryTags" placeholder="pessoal, trabalho, financeiro...">
+              </div>
+            </div>
+          </div>
+
+          <div class="encrypt-animation" id="encryptAnim" style="display:none"></div>
+
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-success" onclick="saveEntry()" id="saveBtn">🔐 CRIPTOGRAFAR E SALVAR</button>
+            <button class="btn btn-ghost" onclick="switchView('vault')">CANCELAR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORY VIEW ── -->
+      <div class="view" id="view-history">
+        <div style="max-width:700px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--text-dim);letter-spacing:0.15em">
+              ◈ REGISTRO DE OPERAÇÕES
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="clearHistory()">LIMPAR</button>
+          </div>
+          <div id="historyList"></div>
+        </div>
+      </div>
+
+      <!-- ── EXPORT VIEW ── -->
+      <div class="view" id="view-export">
+        <div style="max-width:600px">
+          <div class="export-section">
+            <div class="export-title">📤 EXPORTAR COFRE</div>
+            <div class="export-desc">
+              Exporta todos os dados do cofre em um arquivo <code>.vault</code> criptografado com AES-256-GCM.
+              O arquivo só pode ser importado com a mesma senha mestra.
+            </div>
+            <button class="btn btn-primary" onclick="exportVault()">EXPORTAR vault.json</button>
+          </div>
+
+          <div class="export-section">
+            <div class="export-title">📥 IMPORTAR COFRE</div>
+            <div class="export-desc">
+              Importe um arquivo <code>.json</code> exportado pelo CryptoVault.
+              Os dados serão mesclados ao cofre atual.
+            </div>
+            <div class="input-wrap" style="margin-bottom:12px">
+              <input type="file" id="importFile" accept=".json" class="vault-input" style="padding:10px">
+            </div>
+            <button class="btn btn-ghost" onclick="importVault()">IMPORTAR ARQUIVO</button>
+          </div>
+
+          <div class="export-section" style="border-color:rgba(255,61,113,0.2)">
+            <div class="export-title" style="color:var(--accent3)">⚠ ZONA PERIGOSA</div>
+            <div class="export-desc">Esta ação apaga PERMANENTEMENTE todos os dados do cofre. Não há reversão.</div>
+            <button class="btn btn-danger" onclick="nukeVault()">DESTRUIR COFRE COMPLETO</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABOUT VIEW ── -->
+      <div class="view" id="view-about">
+        <div style="max-width:600px">
+          <div style="font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:8px">
+            CRYPTOVAULT
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--accent);letter-spacing:0.2em;margin-bottom:32px">
+            ◈ COFRE DIGITAL DE CÓDIGO ABERTO ◈
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--border);padding:24px;margin-bottom:16px">
+            <div style="font-family:'Orbitron',monospace;font-size:0.85rem;color:var(--accent);margin-bottom:16px">TECNOLOGIA</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--text-mid);line-height:2">
+              ◈ Criptografia: <span style="color:var(--accent2)">Web Crypto API (nativa do browser)</span><br>
+              ◈ Algoritmos: <span style="color:var(--accent2)">AES-256-GCM / AES-128-GCM / AES-256-CBC</span><br>
+              ◈ Derivação de chave: <span style="color:var(--accent2)">PBKDF2-SHA256 · 200.000 iterações</span><br>
+              ◈ Armazenamento: <span style="color:var(--accent2)">localStorage (no seu dispositivo)</span><br>
+              ◈ Servidor: <span style="color:var(--accent3)">NENHUM — 100% offline</span>
+            </div>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--border);padding:24px">
+            <div style="font-family:'Orbitron',monospace;font-size:0.85rem;color:var(--accent);margin-bottom:16px">SEGURANÇA</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--text-mid);line-height:2">
+              ◈ Senha nunca é armazenada em texto puro<br>
+              ◈ Cada entrada tem IV/Nonce único e aleatório<br>
+              ◈ Salt único por cofre (128-bit)<br>
+              ◈ Dados inacessíveis sem a senha mestra correta<br>
+              ◈ Limpe o localStorage para apagar tudo
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">DETALHES DO REGISTRO</div>
+      <button class="modal-close" onclick="closeModal()">✕ FECHAR</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let vaultKey = null;
+let vaultSalt = null;
+let entries = [];
+let history = [];
+let lockMode = 'unlock';
+let currentFilter = 'all';
+let selectedType = 'message';
+let selectedAlgo = 'AES-256-GCM';
+
+const STORAGE_KEY = 'cryptovault_data';
+const SALT_KEY = 'cryptovault_salt';
+const HISTORY_KEY = 'cryptovault_history';
+const HAS_VAULT_KEY = 'cryptovault_exists';
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const exists = localStorage.getItem(HAS_VAULT_KEY);
+  if (!exists) setLockMode('create');
+  else setLockMode('unlock');
+  loadHistory();
+  document.getElementById('masterPwd').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLock();
+  });
+  document.getElementById('masterPwd').addEventListener('input', updateStrengthBar);
+});
+
+// ─────────────────────────────────────────────
+//  LOCK MODE
+// ─────────────────────────────────────────────
+function setLockMode(mode) {
+  lockMode = mode;
+  const isCreate = mode === 'create';
+  document.getElementById('tab-unlock').classList.toggle('active', !isCreate);
+  document.getElementById('tab-create').classList.toggle('active', isCreate);
+  document.getElementById('confirmGroup').style.display = isCreate ? 'block' : 'none';
+  document.getElementById('lockBtn2').textContent = isCreate ? '✚ CRIAR COFRE SEGURO' : '🔓 DESBLOQUEAR COFRE';
+  document.getElementById('lockTitle').textContent = isCreate ? 'CRIAR NOVO COFRE' : 'ACESSO AO COFRE';
+  document.getElementById('lockSub').textContent = isCreate ? 'Defina sua senha mestra' : 'Autentique-se para continuar';
+  document.getElementById('lockIcon').textContent = isCreate ? '🆕' : '🔒';
+}
+
+// ─────────────────────────────────────────────
+//  CRYPTO HELPERS
+// ─────────────────────────────────────────────
+async function deriveKey(password, salt, algo = 'AES-GCM', keyLen = 256) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: algo === 'AES-CBC' ? 'AES-CBC' : 'AES-GCM', length: keyLen },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function algoParams(algoStr) {
+  if (algoStr === 'AES-256-GCM') return { name:'AES-GCM', len:256 };
+  if (algoStr === 'AES-128-GCM') return { name:'AES-GCM', len:128 };
+  if (algoStr === 'AES-256-CBC') return { name:'AES-CBC', len:256 };
+  return { name:'AES-GCM', len:256 };
+}
+
+async function encryptData(plaintext, password, algoStr) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(algoStr.includes('CBC') ? 16 : 12));
+  const { name, len } = algoParams(algoStr);
+  const key = await deriveKey(password, salt, name, len);
+  const params = name === 'AES-CBC' ? { name, iv } : { name, iv };
+  const ct = await crypto.subtle.encrypt(params, key, enc.encode(plaintext));
+  return {
+    ciphertext: bufToBase64(ct),
+    iv: bufToBase64(iv),
+    salt: bufToBase64(salt),
+    algo: algoStr
+  };
+}
+
+async function decryptData(encObj, password) {
+  const { name, len } = algoParams(encObj.algo);
+  const salt = base64ToBuf(encObj.salt);
+  const iv = base64ToBuf(encObj.iv);
+  const ct = base64ToBuf(encObj.ciphertext);
+  const key = await deriveKey(password, salt, name, len);
+  const params = name === 'AES-CBC' ? { name, iv } : { name, iv };
+  const dec = await crypto.subtle.decrypt(params, key, ct);
+  return new TextDecoder().decode(dec);
+}
+
+function bufToBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function base64ToBuf(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
+// Vault-level encrypt for storage
+async function encryptVault(data, password) {
+  const json = JSON.stringify(data);
+  return encryptData(json, password, 'AES-256-GCM');
+}
+async function decryptVault(encObj, password) {
+  const json = await decryptData(encObj, password);
+  return JSON.parse(json);
+}
+
+// ─────────────────────────────────────────────
+//  HANDLE LOCK
+// ─────────────────────────────────────────────
+async function handleLock() {
+  const pwd = document.getElementById('masterPwd').value;
+  if (!pwd || pwd.length < 4) { showToast('Senha muito curta (mín. 4 caracteres)', 'error'); return; }
+
+  if (lockMode === 'create') {
+    const confirm = document.getElementById('confirmPwd').value;
+    if (pwd !== confirm) { showToast('Senhas não conferem', 'error'); return; }
+    // Create new vault
+    entries = [];
+    await saveVaultToStorage(pwd);
+    localStorage.setItem(HAS_VAULT_KEY, '1');
+    vaultKey = pwd;
+    unlockSuccess();
+    addHistory('login', '🆕 Novo cofre criado com sucesso');
+    showToast('Cofre criado com sucesso!', 'success');
+  } else {
+    // Try to unlock
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      // No data yet, just unlock
+      vaultKey = pwd;
+      entries = [];
+      localStorage.setItem(HAS_VAULT_KEY, '1');
+      await saveVaultToStorage(pwd);
+      unlockSuccess();
+      return;
+    }
+    try {
+      const encObj = JSON.parse(raw);
+      entries = await decryptVault(encObj, pwd);
+      vaultKey = pwd;
+      unlockSuccess();
+      addHistory('login', '🔓 Cofre desbloqueado');
+      showToast('Acesso autorizado', 'success');
+    } catch(e) {
+      showToast('Senha incorreta ou cofre corrompido', 'error');
+      document.getElementById('masterPwd').value = '';
+    }
+  }
+}
+
+function unlockSuccess() {
+  document.getElementById('view-lock').classList.remove('active');
+  document.getElementById('view-vault').classList.add('active');
+  document.getElementById('view-lock').style.display = 'none';
+  document.getElementById('view-vault').style.display = 'block';
+
+  const status = document.getElementById('sidebarStatus');
+  status.classList.add('unlocked');
+  status.innerHTML = '<div class="status-dot"></div> COFRE DESBLOQUEADO';
+  document.getElementById('pageTitle').textContent = 'MEU COFRE';
+
+  renderEntries();
+  updateStats();
+  setActiveNav('vault');
+}
+
+function lockVault() {
+  vaultKey = null;
+  entries = [];
+  document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display = ''; });
+  document.getElementById('view-lock').classList.add('active');
+  document.getElementById('masterPwd').value = '';
+
+  const status = document.getElementById('sidebarStatus');
+  status.classList.remove('unlocked');
+  status.innerHTML = '<div class="status-dot"></div> COFRE BLOQUEADO';
+  document.getElementById('lockIcon').textContent = '🔒';
+  document.getElementById('lockTitle').textContent = 'ACESSO AO COFRE';
+
+  const exists = localStorage.getItem(HAS_VAULT_KEY);
+  setLockMode(exists ? 'unlock' : 'create');
+  showToast('Cofre bloqueado', 'info');
+  addHistory('login', '🔒 Cofre bloqueado');
+}
+
+// ─────────────────────────────────────────────
+//  STORAGE
+// ─────────────────────────────────────────────
+async function saveVaultToStorage(pwd) {
+  const p = pwd || vaultKey;
+  const enc = await encryptVault(entries, p);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(enc));
+}
+
+// ─────────────────────────────────────────────
+//  SAVE ENTRY
+// ─────────────────────────────────────────────
+async function saveEntry() {
+  if (!vaultKey) { showToast('Cofre bloqueado', 'error'); return; }
+  const title = document.getElementById('entryTitle').value.trim();
+  const content = document.getElementById('entryContent').value.trim();
+  const tags = document.getElementById('entryTags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+  if (!title) { showToast('Título obrigatório', 'error'); return; }
+  if (!content) { showToast('Conteúdo obrigatório', 'error'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ CRIPTOGRAFANDO...';
+
+  // Show animation
+  const anim = document.getElementById('encryptAnim');
+  anim.style.display = 'block';
+  anim.textContent = '⏳ Gerando IV aleatório...';
+  await sleep(300);
+  anim.textContent = '🔑 Derivando chave com PBKDF2 (200k iterações)...';
+  await sleep(600);
+  anim.textContent = `🔐 Cifrando com ${selectedAlgo}...`;
+  await sleep(400);
+
+  try {
+    const encrypted = await encryptData(content, vaultKey, selectedAlgo);
+    anim.textContent = '✓ ' + encrypted.ciphertext.substring(0, 60) + '...';
+
+    const entry = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      title,
+      type: selectedType,
+      algo: selectedAlgo,
+      tags,
+      encrypted,
+      createdAt: new Date().toISOString(),
+      preview: content.substring(0, 32) + (content.length > 32 ? '...' : '')
+    };
+
+    entries.unshift(entry);
+    await saveVaultToStorage();
+
+    await sleep(400);
+    anim.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '🔐 CRIPTOGRAFAR E SALVAR';
+
+    // Reset form
+    document.getElementById('entryTitle').value = '';
+    document.getElementById('entryContent').value = '';
+    document.getElementById('entryTags').value = '';
+
+    addHistory('add', `✚ Registro criado: "${title}"`);
+    showToast(`"${title}" salvo com sucesso!`, 'success');
+    updateStats();
+    switchView('vault');
+    renderEntries();
+  } catch(e) {
+    showToast('Erro ao criptografar: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '🔐 CRIPTOGRAFAR E SALVAR';
+    anim.style.display = 'none';
+  }
+}
+
+// ─────────────────────────────────────────────
+//  RENDER ENTRIES
+// ─────────────────────────────────────────────
+function renderEntries() {
+  const grid = document.getElementById('entriesGrid');
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = entries.filter(e => {
+    const matchType = currentFilter === 'all' || e.type === currentFilter;
+    const matchSearch = !search || e.title.toLowerCase().includes(search) || e.tags.join(' ').toLowerCase().includes(search);
+    return matchType && matchSearch;
+  });
+
+  document.getElementById('entryCount').textContent = entries.length;
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">🗄️</div>
+      <p>${entries.length ? 'NENHUM RESULTADO ENCONTRADO' : 'COFRE VAZIO · ADICIONE SEU PRIMEIRO REGISTRO'}</p>
+    </div>`;
+    return;
+  }
+
+  const typeColors = {message:'badge-msg', password:'badge-pass', note:'badge-note', secret:'badge-msg'};
+  const typeEmoji = {message:'💬', password:'🔑', note:'📝', secret:'🕵️'};
+
+  grid.innerHTML = filtered.map(e => `
+    <div class="entry-card" onclick="viewEntry('${e.id}')">
+      <div class="entry-type-badge ${typeColors[e.type]||'badge-msg'}">
+        ${typeEmoji[e.type]||'💬'} ${e.type.toUpperCase()}
+      </div>
+      <div class="entry-title">${escHtml(e.title)}</div>
+      <div class="entry-preview">●●●●●●●●●●●●●●●●●●●●</div>
+      <div class="entry-meta">
+        <span class="entry-algo">${e.algo}</span>
+        <span>${formatDate(e.createdAt)}</span>
+        <div class="entry-actions" onclick="event.stopPropagation()">
+          <button class="entry-btn" onclick="viewEntry('${e.id}')">👁 VER</button>
+          <button class="entry-btn del" onclick="deleteEntry('${e.id}')">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  VIEW / DECRYPT ENTRY
+// ─────────────────────────────────────────────
+async function viewEntry(id) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+
+  const modal = document.getElementById('detailModal');
+  const body = document.getElementById('modalBody');
+  const footer = document.getElementById('modalFooter');
+  document.getElementById('modalTitle').textContent = escHtml(entry.title);
+
+  body.innerHTML = `
+    <div style="margin-bottom:20px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);letter-spacing:0.2em;margin-bottom:12px">◈ DESCRIPTOGRAFANDO...</div>
+      <div class="encrypt-animation" id="decryptAnim">⏳ Aguarde...</div>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--text-dim);display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+      <div>TIPO: <span style="color:var(--accent4)">${entry.type.toUpperCase()}</span></div>
+      <div>ALGORITMO: <span style="color:var(--accent4)">${entry.algo}</span></div>
+      <div>CRIADO: <span style="color:var(--text)">${formatDateFull(entry.createdAt)}</span></div>
+      <div>TAGS: <span style="color:var(--accent)">${entry.tags.join(', ') || '—'}</span></div>
+    </div>
+  `;
+  footer.innerHTML = `<button class="btn btn-danger btn-sm" onclick="deleteEntry('${id}');closeModal()">✕ DELETAR</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal()">FECHAR</button>`;
+
+  modal.classList.add('open');
+
+  // Decrypt
+  const anim = document.getElementById('decryptAnim');
+  try {
+    anim.textContent = '🔑 Derivando chave com PBKDF2...';
+    await sleep(400);
+    anim.textContent = `🔐 Decifrando com ${entry.algo}...`;
+    await sleep(300);
+    const plain = await decryptData(entry.encrypted, vaultKey);
+    anim.style.display = 'none';
+
+    body.insertAdjacentHTML('afterbegin', `
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);letter-spacing:0.2em;margin-bottom:8px">◈ CONTEÚDO DECIFRADO</div>
+      <div class="decrypted-box">${escHtml(plain)}</div>
+    `);
+
+    addHistory('view', `👁 Visualizou: "${entry.title}"`);
+  } catch(e) {
+    anim.textContent = '✕ Erro ao descriptografar';
+    anim.style.color = 'var(--accent3)';
+  }
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+//  DELETE
+// ─────────────────────────────────────────────
+async function deleteEntry(id) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  if (!confirm(`Deletar "${entry.title}"? Esta ação é permanente.`)) return;
+  entries = entries.filter(e => e.id !== id);
+  await saveVaultToStorage();
+  addHistory('del', `✕ Deletado: "${entry.title}"`);
+  showToast(`"${entry.title}" deletado`, 'info');
+  renderEntries();
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+//  FILTER / SEARCH
+// ─────────────────────────────────────────────
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderEntries();
+}
+
+// ─────────────────────────────────────────────
+//  TYPE / ALGO SELECTORS
+// ─────────────────────────────────────────────
+function selectType(el) {
+  document.querySelectorAll('.type-opt').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedType = el.dataset.type;
+}
+function selectAlgo(el) {
+  document.querySelectorAll('.algo-opt').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedAlgo = el.dataset.algo;
+}
+
+// ─────────────────────────────────────────────
+//  STATS
+// ─────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-total').textContent = entries.length;
+  document.getElementById('stat-msg').textContent = entries.filter(e => e.type === 'message' || e.type === 'secret').length;
+  document.getElementById('stat-pass').textContent = entries.filter(e => e.type === 'password').length;
+  document.getElementById('stat-note').textContent = entries.filter(e => e.type === 'note').length;
+}
+
+// ─────────────────────────────────────────────
+//  HISTORY
+// ─────────────────────────────────────────────
+function loadHistory() {
+  const raw = localStorage.getItem(HISTORY_KEY);
+  if (raw) history = JSON.parse(raw);
+}
+function saveHistoryToStorage() {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
+}
+function addHistory(type, msg) {
+  history.unshift({ type, msg, time: new Date().toISOString() });
+  saveHistoryToStorage();
+  renderHistory();
+}
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  if (!history.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🕒</div><p>NENHUM REGISTRO</p></div>';
+    return;
+  }
+  list.innerHTML = history.slice(0, 50).map(h => `
+    <div class="history-item">
+      <div class="history-dot h-${h.type}"></div>
+      <div class="history-msg">${escHtml(h.msg)}</div>
+      <div class="history-time">${formatDateFull(h.time)}</div>
+    </div>
+  `).join('');
+}
+function clearHistory() {
+  if (!confirm('Limpar histórico?')) return;
+  history = [];
+  saveHistoryToStorage();
+  renderHistory();
+  showToast('Histórico limpo', 'info');
+}
+
+// ─────────────────────────────────────────────
+//  EXPORT / IMPORT
+// ─────────────────────────────────────────────
+async function exportVault() {
+  if (!vaultKey) { showToast('Cofre bloqueado', 'error'); return; }
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) { showToast('Cofre vazio', 'error'); return; }
+  const blob = new Blob([raw], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `cryptovault_${Date.now()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  addHistory('view', '📤 Cofre exportado');
+  showToast('Cofre exportado!', 'success');
+}
+
+async function importVault() {
+  if (!vaultKey) { showToast('Desbloqueie o cofre primeiro', 'error'); return; }
+  const file = document.getElementById('importFile').files[0];
+  if (!file) { showToast('Selecione um arquivo', 'error'); return; }
+  try {
+    const text = await file.text();
+    const encObj = JSON.parse(text);
+    const imported = await decryptVault(encObj, vaultKey);
+    const newEntries = imported.filter(imp => !entries.find(e => e.id === imp.id));
+    entries = [...newEntries, ...entries];
+    await saveVaultToStorage();
+    renderEntries(); updateStats();
+    addHistory('add', `📥 Importados ${newEntries.length} registros`);
+    showToast(`${newEntries.length} registros importados!`, 'success');
+  } catch(e) {
+    showToast('Erro: arquivo inválido ou senha diferente', 'error');
+  }
+}
+
+async function nukeVault() {
+  if (!confirm('ATENÇÃO: Isso apagará PERMANENTEMENTE todos os dados. Tem certeza?')) return;
+  if (!confirm('Segunda confirmação: Apagar tudo definitivamente?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SALT_KEY);
+  localStorage.removeItem(HAS_VAULT_KEY);
+  localStorage.removeItem(HISTORY_KEY);
+  history = []; entries = []; vaultKey = null;
+  showToast('Cofre destruído', 'error');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// ─────────────────────────────────────────────
+//  VIEW SWITCHER
+// ─────────────────────────────────────────────
+function switchView(name) {
+  if (!vaultKey && name !== 'lock') {
+    showToast('Desbloqueie o cofre primeiro', 'error');
+    return;
+  }
+  document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display = ''; });
+  const el = document.getElementById('view-' + name);
+  if (el) { el.classList.add('active'); el.style.display = 'block'; }
+  setActiveNav(name);
+
+  const titles = { vault:'MEU COFRE', add:'NOVO REGISTRO', history:'HISTÓRICO', export:'EXPORTAR / IMPORTAR', about:'SOBRE O CRYPTOVAULT' };
+  document.getElementById('pageTitle').textContent = titles[name] || name.toUpperCase();
+
+  if (name === 'history') renderHistory();
+  if (name === 'vault') { renderEntries(); updateStats(); }
+}
+
+function setActiveNav(name) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.querySelector(`[data-view="${name}"]`);
+  if (el) el.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+//  UI HELPERS
+// ─────────────────────────────────────────────
+function togglePwd(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🔒';
+}
+
+function updateStrengthBar() {
+  const val = document.getElementById('masterPwd').value;
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (val.length >= 14) score++;
+  if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const colors = ['#ff3d71','#ff6b00','#ffaa00','#00d4ff','#00ff88'];
+  for (let i = 1; i <= 5; i++) {
+    const seg = document.getElementById('ps' + i);
+    if (seg) {
+      seg.style.background = i <= score ? colors[score-1] : 'var(--border)';
+      seg.style.boxShadow = i <= score ? `0 0 6px ${colors[score-1]}` : 'none';
+    }
+  }
+}
+
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const icons = { success:'✓', error:'✕', info:'◈' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'◈'}</span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut 0.3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR');
+}
+function formatDateFull(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('pt-BR');
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Close modal on overlay click
+document.getElementById('detailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Keyboard: Escape closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
